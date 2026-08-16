@@ -40,33 +40,43 @@
 </div>
 
 <script>
-// --- 1. ROUTING LOGIC (Triggers when someone opens a generated link) ---
+// --- 1. CORRECTED ROUTING LOGIC ---
 function handleIncomingRedirect() {
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = urlParams.get('v');
 
     if (videoId) {
-        // Hide the generator UI, show routing message
+        // Hide generator UI, show routing status
         document.getElementById('appInterface').style.display = 'none';
         document.getElementById('routingStatus').style.display = 'block';
 
-        const appUri = `youtube://watch?v=${videoId}`;
-        const webFallback = `https://www.youtube.com/watch?v=${videoId}`;
-
-        // Set backup link fallback
+        const webFallback = `https://youtube.com{videoId}`;
         document.getElementById('fallbackLink').href = webFallback;
 
-        // Force deep link execution 
-        window.location.href = appUri;
+        // Detect device OS
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isAndroid = /android/i.test(userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
 
-        // Fail-safe: If the device doesn't have the YouTube app, redirect to the browser version after 1.5 seconds
-        setTimeout(() => {
+        if (isAndroid) {
+            // Forces Android to open the official YouTube application package directly
+            window.location.href = `intent://://youtube.com{videoId}#Intent;package=com.google.android.youtube;scheme=https;end;`;
+        } else if (isIOS) {
+            // Uses replace to clear history stack and fires custom iOS scheme
+            window.location.replace(`youtube://watch?v=${videoId}`);
+            
+            // Safe fallback delay for slower iOS devices
+            setTimeout(() => {
+                window.location.href = webFallback;
+            }, 2500);
+        } else {
+            // Direct browser redirect for desktop users
             window.location.href = webFallback;
-        }, 1500);
+        }
     }
 }
 
-// --- 2. GENERATION LOGIC (Triggers on homepage when creating a link) ---
+// --- 2. GENERATION LOGIC ---
 function extractVideoId(url) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
@@ -82,11 +92,9 @@ function generateSnapLink() {
         return;
     }
 
-    // Build the dynamic URL using the current domain path
     const currentBaseUrl = window.location.href.split('?')[0];
     const generatedUrl = `${currentBaseUrl}?v=${videoId}`;
 
-    // Display the result
     document.getElementById('outputLink').innerText = generatedUrl;
     document.getElementById('resultBox').style.display = 'block';
 }
@@ -104,4 +112,3 @@ window.onload = handleIncomingRedirect;
 
 </body>
 </html>
-
