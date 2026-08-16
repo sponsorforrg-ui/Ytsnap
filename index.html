@@ -51,7 +51,7 @@ function handleIncomingRedirect() {
         document.getElementById('routingStatus').style.display = 'block';
 
         const appUri = `youtube://watch?v=${videoId}`;
-        const webFallback = `https://youtube.com{videoId}`;
+        const webFallback = `https://youtu.be/${videoId}`;
 
         // Set backup link fallback
         document.getElementById('fallbackLink').href = webFallback;
